@@ -7,7 +7,7 @@ const sample=()=>({version:1,buyin:10000,phase:'live',demo:true,players:[{id:'de
 let state=fresh(),modalMode=null,selectedId=null,toastTimer,results=null;
 try{
  const saved=JSON.parse(localStorage.getItem('pokersplit-v1'));
- if(saved&&saved.version===1&&Number.isSafeInteger(saved.buyin)&&saved.buyin>0&&['setup','live','settle'].includes(saved.phase)&&Array.isArray(saved.players)&&saved.players.every(p=>typeof p.id==='string'&&typeof p.name==='string'&&Array.isArray(p.rebuys)&&p.rebuys.every(n=>Number.isSafeInteger(n)&&n>0)&&(p.cash===null||(Number.isSafeInteger(p.cash)&&p.cash>=0))))state=saved;
+ if(saved&&saved.version===1&&Number.isSafeInteger(saved.buyin)&&saved.buyin>0&&['setup','live','settle'].includes(saved.phase)&&Array.isArray(saved.players)&&saved.players.every(p=>typeof p.id==='string'&&typeof p.name==='string'&&Array.isArray(p.rebuys)&&p.rebuys.every(n=>Number.isSafeInteger(n)&&n>0)&&(p.cash===null||(Number.isSafeInteger(p.cash)&&p.cash>=0))&&(p.exited===undefined||typeof p.exited==='boolean')))state=saved;
 }catch{}
 const invested=p=>state.buyin+p.rebuys.reduce((a,b)=>a+b,0);
 const pot=()=>state.players.reduce((a,p)=>a+invested(p),0);
@@ -33,15 +33,16 @@ function render(){
  document.querySelectorAll('[data-buyin]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.buyin)*100===state.buyin));
  $('players').innerHTML=state.players.length?state.players.map((p,i)=>{
  const rebuys=p.rebuys.length;
- return '<article class="player-card color-'+i%4+'"><div class="player-main"><span class="avatar">'+esc(p.name.slice(0,1))+'</span><div class="player-info"><strong>'+esc(p.name)+'</strong><small>נכנס '+money(invested(p))+'</small></div>'+
- (setup?'<button class="remove-player" data-remove="'+esc(p.id)+'" aria-label="הסרת '+esc(p.name)+'">×</button>':closing?'<div class="cash-field"><span>₪</span><input type="number" inputmode="decimal" min="0" max="1000000" step="0.01" placeholder="0" aria-label="כסף בסיום של '+esc(p.name)+'" data-cash="'+esc(p.id)+'" value="'+(p.cash===null?'':p.cash/100)+'"></div>':'<button class="rebuy-button" data-rebuy="'+esc(p.id)+'" aria-label="ריבאי עבור '+esc(p.name)+'"><span>＋</span> ריבאי</button>')+'</div>'+
- (!setup&&!closing&&rebuys?'<button class="rebuy-history" data-history="'+esc(p.id)+'" aria-label="צפייה וביטול ריבאיים של '+esc(p.name)+'">ריבאי ×'+rebuys+' <span>↶</span></button>':'')+'</article>';
+ return '<article class="player-card color-'+i%4+'"><div class="player-main"><span class="avatar">'+esc(p.name.slice(0,1))+'</span><div class="player-info"><strong>'+esc(p.name)+'</strong><small>נכנס '+money(invested(p))+'</small>'+(p.exited?'<small class="exit-status">יצא'+(!closing?(p.cash===null?' · סכום חסר':' עם '+money(p.cash)):' · סכום היציאה')+'</small>':'')+'</div>'+
+ (setup?'<button class="remove-player" data-remove="'+esc(p.id)+'" aria-label="הסרת '+esc(p.name)+'">×</button>':closing?'<div class="cash-field"><span>₪</span><input type="number" inputmode="decimal" min="0" max="1000000" step="0.01" placeholder="0" aria-label="'+(p.exited?'סכום יציאה של ':'כסף בסיום של ')+esc(p.name)+'" data-cash="'+esc(p.id)+'" value="'+(p.cash===null?'':p.cash/100)+'"></div>':p.exited?'<button class="exit-button" data-exit="'+esc(p.id)+'" aria-label="תיקון סכום יציאה של '+esc(p.name)+'">תיקון יציאה</button>':'<button class="rebuy-button" data-rebuy="'+esc(p.id)+'" aria-label="ריבאי עבור '+esc(p.name)+'"><span>＋</span> ריבאי</button>')+'</div>'+
+ (!setup&&!closing?'<div class="player-actions">'+(!p.exited?'<button class="exit-button" data-exit="'+esc(p.id)+'" aria-label="יציאה של '+esc(p.name)+'">יציאה</button>':'')+(rebuys&&!p.exited?'<button class="rebuy-history" data-history="'+esc(p.id)+'" aria-label="צפייה וביטול ריבאיים של '+esc(p.name)+'">ריבאי ×'+rebuys+' <span>↶</span></button>':'')+'</div>':'')+'</article>';
  }).join(''):'<div class="empty-table"><span aria-hidden="true">♠ ♥ ♣ ♦</span></div>';
  renderSummary();
 }
 function renderSummary(){
  const setup=state.phase==='setup',closing=state.phase==='settle';
- $('total-pot').textContent=money(pot());$('pot-details').textContent=state.players.length+' שחקנים';
+ const exited=state.players.filter(p=>p.exited),withdrawn=exited.reduce((a,p)=>a+(p.cash??0),0);
+ $('total-pot').textContent=money(pot()-withdrawn);$('pot-details').textContent=exited.length?state.players.filter(p=>!p.exited).length+' במשחק · '+exited.length+' יצאו':state.players.length+' שחקנים';
  const missing=state.players.filter(p=>p.cash===null).length,diff=state.players.reduce((a,p)=>a+(p.cash??0),0)-pot(),ready=closing&&state.players.length>=2&&!missing&&!diff;
  $('next-step').innerHTML=setup?'התחל משחק <span>▶</span>':closing?ready?'מי משלם למי? <span>↓</span>':'כמה נשאר לכל אחד?':'סיום משחק <span>🏁</span>';
  $('next-step').disabled=state.players.length<2||(closing&&!ready)||amount($('buyin').value)===null;
@@ -65,6 +66,13 @@ function openModal(mode,id=null){
   $('rebuy-presets').hidden=false;$('rebuy-presets').innerHTML=[.5,1,2].map(n=>'<button type="button" data-preset="'+Math.round(state.buyin*n)+'">'+money(Math.round(state.buyin*n))+'</button>').join('');
   $('modal-submit').textContent='הוסף ריבאי';
  }
+ if(mode==='exit'){
+  $('modal-title').textContent=(p.exited?'תיקון יציאה של ':'יציאה של ')+p.name;
+  $('modal-description').textContent='סכום היציאה נשמר ונכלל בחישוב בסוף המשחק.';
+  $('modal-label').textContent='עם כמה כסף יצא?';
+  input.type='number';input.inputMode='decimal';input.min='0';input.max='1000000';input.step='0.01';input.value=p.exited&&p.cash!==null?p.cash/100:'';
+  $('modal-submit').textContent='שמור יציאה';
+ }
  if(['new','demo','remove','history'].includes(mode)){
   input.hidden=true;input.required=false;$('modal-label').hidden=true;
   $('modal-title').textContent=mode==='new'?'משחק חדש?':mode==='demo'?'לפתוח דוגמה?':mode==='remove'?'להסיר את '+p.name+'?':'הריבאיים של '+p.name;
@@ -79,7 +87,7 @@ function openModal(mode,id=null){
 }
 function applyRebuy(n){
  if(n===null){$('modal-error').textContent='צריך סכום חיובי, עם עד שתי ספרות אחרי הנקודה.';return;}
- const p=state.players.find(p=>p.id===selectedId);p.rebuys.push(n);save();render();$('modal').close();toast('+'+money(n)+' לקופה 🎉');
+ const p=state.players.find(p=>p.id===selectedId);if(!p||p.exited||state.phase!=='live')return;p.rebuys.push(n);save();render();$('modal').close();toast('+'+money(n)+' לקופה 🎉');
 }
 $('add-form').onsubmit=e=>{e.preventDefault();const value=$('player-input').value,error=addName(value);$('add-error').textContent=error||'';if(!error){$('player-input').value='';$('player-input').focus();}};
 $('player-input').oninput=()=>$('add-error').textContent='';
@@ -88,11 +96,19 @@ document.querySelectorAll('[data-buyin]').forEach(b=>b.onclick=()=>{state.buyin=
 $('add-player').onclick=()=>openModal('add');
 $('new-game').onclick=()=>state.players.length?openModal('new'):(state=fresh(),save(),render());
 $('demo').onclick=()=>state.players.length?openModal('demo'):(state=sample(),save(),render());
-$('players').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rebuy)openModal('rebuy',b.dataset.rebuy);if(b.dataset.remove)openModal('remove',b.dataset.remove);if(b.dataset.history)openModal('history',b.dataset.history);};
+$('players').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rebuy)openModal('rebuy',b.dataset.rebuy);if(b.dataset.remove)openModal('remove',b.dataset.remove);if(b.dataset.history)openModal('history',b.dataset.history);if(b.dataset.exit)openModal('exit',b.dataset.exit);};
 $('players').oninput=e=>{if(!e.target.matches('[data-cash]'))return;const p=state.players.find(p=>p.id===e.target.dataset.cash),n=amount(e.target.value,true);p.cash=n;e.target.setCustomValidity(n===null&&e.target.value!==''?'הזינו סכום תקין, כולל 0.':'');save();renderSummary();};
 $('modal-form').onsubmit=e=>{
  e.preventDefault();
  if(modalMode==='rebuy'){applyRebuy(amount($('modal-input').value));return;}
+ if(modalMode==='exit'){
+  const p=state.players.find(p=>p.id===selectedId),n=amount($('modal-input').value,true);
+  if(!p||state.phase!=='live')return;
+  if(n===null){$('modal-error').textContent='הזינו סכום תקין, כולל 0, עם עד שתי ספרות אחרי הנקודה.';return;}
+  const available=pot()-state.players.filter(other=>other.exited&&other.id!==p.id).reduce((a,other)=>a+other.cash,0);
+  if(n>available){$('modal-error').textContent='סכום היציאה גדול מהכסף שנותר בקופה ('+money(available)+').';return;}
+  p.cash=n;p.exited=true;save();render();$('modal').close();toast('סכום היציאה של '+p.name+' נשמר');return;
+ }
  if(modalMode==='add'){const error=addName($('modal-input').value);if(error){$('modal-error').textContent=error;return;}}
  if(modalMode==='new')state=fresh();
  if(modalMode==='demo')state=sample();
@@ -107,6 +123,7 @@ $('back-to-game').onclick=()=>phase('live');
 function renderResults(){
  const r=$('results');r.hidden=false;
  r.innerHTML='<div class="result-celebration" aria-hidden="true">🎉</div><h2>זהו, מסודרים!</h2>'+
+ (results.transfers.length?'<p class="transfer-summary">'+results.transfers.length+' העברות'+(results.optimal?' · מינימום העברות':' · פתרון מצומצם, ללא הבטחת מינימום')+'</p>':'')+
  (results.transfers.length?results.transfers.map(t=>'<div class="transfer"><div><strong>'+esc(t.from)+'</strong><span> מעביר/ה ל־</span><strong>'+esc(t.to)+'</strong></div><b dir="ltr">'+money(t.amount)+'</b></div>').join(''):'<p>אף אחד לא צריך להעביר כסף ✓</p>')+
  '<button class="share-button" id="copy-results">העתק לחברים ⧉</button>';
  $('copy-results').onclick=async()=>{
