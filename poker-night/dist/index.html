@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b573e"><meta name="description" content="פותחים שולחן, מוסיפים ריבאי, וסוגרים חשבון. PokerSplit עושה את החישובים בשבילכם."><title>PokerSplit — השולחן שלכם</title><link rel="stylesheet" href="styles.css"></head>
+<body data-phase="setup">
+<header class="topbar"><a class="brand" href="./" aria-label="PokerSplit"><span class="brand-chip">♠</span><span dir="ltr">Poker<span>Split</span></span></a><button class="icon-button" id="new-game" aria-label="משחק חדש">↻</button></header>
+<main>
+<section class="screen-heading"><h1 id="screen-title">משחק חדש ♠</h1></section>
+<section class="setup-card" id="setup-controls"><label for="buyin">כמה נכנסים?</label><div class="buyin-options" aria-label="סכומי כניסה"><button data-buyin="50">₪50</button><button data-buyin="100">₪100</button><button data-buyin="200">₪200</button><div class="custom-buyin"><span>₪</span><input id="buyin" type="number" min="0.01" step="0.01" max="1000000" value="100" inputmode="decimal" aria-label="סכום כניסה אחר"></div></div><form id="add-form"><label for="player-input">מי משחק?</label><div class="add-field"><input id="player-input" placeholder="שם השחקן" maxlength="24" autocomplete="off"><button type="submit" aria-label="הוספת השחקן">＋</button></div><p id="add-error" class="field-error" role="alert"></p></form></section>
+<section class="table-stage" id="table-stage" aria-label="סיכום הקופה"><div class="table-cards" aria-hidden="true"><span>A<b>♠</b></span><span>A<b>♥</b></span></div><div class="pot-center"><span>בקופה</span><strong id="total-pot" dir="ltr">₪0</strong><small id="pot-details">0 שחקנים</small></div><div class="chip-stack" aria-hidden="true"><i></i><i></i><i></i></div></section>
+<section class="player-section"><div class="section-heading"><h2 id="players-title">השחקנים</h2><button class="small-button" id="add-player" hidden>＋ שחקן</button><span id="player-count"></span></div><div id="players" class="players"></div></section>
+<section id="reconciliation" aria-live="polite" hidden></section><section id="results" hidden aria-live="polite"></section>
+<div class="support-row"><button class="text-button" id="demo">משחק לדוגמה</button><span id="save-status" class="visually-hidden" role="status">✓ נשמר אוטומטית</span></div>
+</main>
+<div class="bottom-bar"><button id="next-step" class="main-action">התחל משחק <span>▶</span></button><button id="back-to-game" class="text-button" hidden>חזרה למשחק</button><small id="action-hint">מוסיפים לפחות 2 שחקנים</small></div>
+<dialog id="modal"><form id="modal-form"><button type="button" id="close-modal" class="modal-close" aria-label="סגירה">×</button><div class="modal-symbol" aria-hidden="true">♠</div><h2 id="modal-title"></h2><p id="modal-description"></p><label for="modal-input" id="modal-label"></label><input id="modal-input" autocomplete="off"><div id="rebuy-presets" class="rebuy-presets" hidden></div><p id="modal-error" class="field-error" role="alert"></p><button class="main-action" id="modal-submit" type="submit"></button></form></dialog>
+<div id="toast" role="status"></div><script src="settlement.js"></script><script src="app.js"></script>
+</body></html>

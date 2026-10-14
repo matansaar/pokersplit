@@ -1,0 +1,1 @@
+{"name":"pokersplit","private":true,"scripts":{"dev":"node server.cjs","test":"node --test tests/settlement.test.cjs"}}
