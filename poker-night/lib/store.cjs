@@ -50,6 +50,10 @@ async function getStore(){
    const {Pool}=require('pg');
    return createStore(new Pool({connectionString,max:3,connectionTimeoutMillis:10000,idleTimeoutMillis:10000}));
   }
+  if(process.env.SUPABASE_URL&&(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY)){
+   const {createSupabaseStore}=require('./supabase-store.cjs');
+   return createSupabaseStore({url:process.env.SUPABASE_URL,key:process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY});
+  }
   if(process.env.VERCEL)throw new Error('DATABASE_NOT_CONFIGURED');
   const {PGlite}=require('@electric-sql/pglite'),path=require('node:path');
   return createStore(new PGlite(process.env.POKERSPLIT_DATA_DIR||path.join(__dirname,'../data')));

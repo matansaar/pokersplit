@@ -50,3 +50,19 @@ tunnel shares this database across browsers, but it is not the Vercel database.
 `npm test` from the repository root runs the complete suite, including real
 PostgreSQL queries via PGlite, HTTP requests, independent sync clients, offline
 recovery, concurrency conflicts, immutable completion, and persistence on disk.
+
+## Supabase hosted connection
+
+For Supabase, run `poker-night/supabase/schema.sql` once in the project's SQL Editor.
+It creates the game table and the atomic save function, enables RLS, and restricts
+access to the server role. Browser publishable keys cannot read or modify the table.
+
+Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as server-only environment variables
+in Vercel for Production and Preview, then deploy. The existing default secret key
+can be used; no database password reset is needed. Never prefix the secret variable
+with `NEXT_PUBLIC_` or include it in browser scripts. `SUPABASE_SERVICE_ROLE_KEY`
+is also supported for installations still using a legacy service-role JWT.
+
+When `DATABASE_URL` or `POSTGRES_URL` is configured it takes priority; otherwise
+the Supabase adapter uses the project's HTTPS Data API. All deployments must use
+the same Supabase project. A deployment updates code and never clears stored games.
