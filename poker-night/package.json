@@ -1,1 +1,1 @@
-{"name":"pokersplit","private":true,"scripts":{"dev":"node server.cjs","test":"node --test tests/*.test.cjs"}}
+{"name":"pokersplit","private":true,"scripts":{"dev":"node server.cjs","test":"node --test tests/*.test.cjs"},"dependencies":{"@electric-sql/pglite":"^0.5.10","pg":"^8.23.1"}}

@@ -1,0 +1,10 @@
+{
+  "name": "pokersplit-workspace",
+  "private": true,
+  "workspaces": ["poker-night"],
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env poker-night/server.cjs",
+    "test": "node --test poker-night/tests/*.test.cjs"
+  },
+  "engines": {"node": ">=22"}
+}
